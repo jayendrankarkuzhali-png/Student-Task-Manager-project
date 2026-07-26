@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Task Manager</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;padding:30px 15px;color:#202744;
+  font-family:"Segoe UI",Arial,sans-serif;
+  background:
+    linear-gradient(rgba(19,28,60,.82),rgba(40,25,75,.88)),
+    radial-gradient(circle at 15% 20%,#7c5cff,transparent 30%),
+    radial-gradient(circle at 85% 80%,#00bfff,transparent 30%);
+  background-attachment:fixed;transition:.3s;
+}
+.quote{position:fixed;color:rgba(255,255,255,.6);font-size:19px;font-style:italic;font-weight:600;line-height:1.5;max-width:170px;z-index:-1}
+.q1{left:3%;top:15%}.q2{right:3%;top:20%}.q3{left:4%;bottom:15%}.q4{right:4%;bottom:15%}
+
+.container{
+  max-width:850px;margin:auto;background:rgba(255,255,255,.97);
+  padding:30px;border-radius:30px;box-shadow:0 30px 70px rgba(0,0,0,.35);
+}
+.header{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:31px;color:#202744}
+.subtitle{text-align:center;color:#707994;margin:8px 0 22px}
+#darkModeBtn{border:0;width:48px;height:48px;border-radius:50%;background:#202744;color:white;font-size:21px;cursor:pointer}
+.welcome{padding:24px;border-radius:20px;background:linear-gradient(135deg,#dcd3ff,#b9e7ff);margin-bottom:22px}
+.welcome h2{margin-bottom:8px}.welcome p{color:#475174}
+input,select{font-size:15px;outline:none}
+#searchInput,#taskInput{
+  width:100%;padding:15px;border:2px solid #e1e4ed;border-radius:14px;margin-bottom:12px
+}
+.input-area{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+select,input[type=date]{padding:14px;border:2px solid #e1e4ed;border-radius:12px;background:white}
+#addBtn{grid-column:span 2;padding:16px;border:0;border-radius:14px;color:white;font-size:17px;font-weight:bold;cursor:pointer;background:linear-gradient(90deg,#674de8,#238eea)}
+#addBtn:hover{transform:translateY(-2px)}
+.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-top:22px}
+.dashboard-card{padding:20px;border-radius:18px;background:#f7f8fc;border:1px solid #e5e7f0}
+.dashboard-card h3{margin-bottom:12px}.big-number{font-size:28px;font-weight:bold;margin-bottom:10px}
+.progress-container{height:13px;background:#e5e7ef;border-radius:20px;overflow:hidden}
+#progressBar{height:100%;width:0;background:linear-gradient(90deg,#6755e8,#2398ec);transition:.5s}
+.alert{display:none;padding:14px;margin-top:18px;border-radius:14px;background:#fff3cd;color:#725500;font-weight:bold}
+.filters{display:flex;gap:9px;flex-wrap:wrap;margin:23px 0 14px}
+.filter-btn{padding:10px 15px;border:0;border-radius:20px;background:#eef0f5;cursor:pointer}
+.filter-btn.active{background:#6755e8;color:white}
+#taskList{list-style:none;margin-top:12px}
+.task-card{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:18px;margin-bottom:12px;border-radius:18px;background:#fafbfe;border:1px solid #e6e8ef;transition:.3s}
+.task-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+.task-title{font-size:17px;font-weight:bold;margin-bottom:7px}
+.completed .task-title{text-decoration:line-through;color:#999}
+.task-details{font-size:13px;color:#69718b}
+.priority{display:inline-block;padding:4px 8px;border-radius:8px;margin-right:5px}
+.high{background:#ffdede;color:#d10000}.medium{background:#fff1bd;color:#856500}.low{background:#d9f6e4;color:#17733c}
+.overdue{color:#d10000;font-weight:bold}
+.task-buttons{display:flex;gap:7px}
+.complete-btn,.delete-btn{border:0;padding:9px 12px;border-radius:10px;color:white;cursor:pointer}
+.complete-btn{background:#20a85a}.delete-btn{background:#ed4354}
+.streak{text-align:center;padding:18px;margin-top:18px;border-radius:18px;background:linear-gradient(135deg,#fff0c4,#ffe0a5)}
+#streakCount{font-size:28px;font-weight:bold}
+.timer{margin-top:22px;padding:23px;text-align:center;border-radius:20px;background:linear-gradient(135deg,#eee9ff,#e0f3ff)}
+#timerDisplay{font-size:48px;font-weight:bold;margin:13px}
+.timer button{border:0;padding:11px 18px;margin:4px;border-radius:10px;cursor:pointer;font-weight:bold}
+.start{background:#20a85a;color:white}.pause{background:#ffb21c;color:white}.reset{background:#ed4354;color:white}
+#celebration{display:none;text-align:center;padding:23px;margin-top:18px;border-radius:20px;background:linear-gradient(135deg,#d5ffd9,#bdeaff);animation:pop .5s}
+@keyframes pop{from{transform:scale(.8)}to{transform:scale(1)}}
+
+body.dark{background:linear-gradient(135deg,#080d1d,#18213d)}
+body.dark .container{background:rgba(25,30,50,.97);color:white}
+body.dark h1{color:white}body.dark .subtitle{color:#b8bfd5}
+body.dark .dashboard-card,body.dark .task-card{background:#252b42;border-color:#3b435e}
+body.dark #searchInput,body.dark #taskInput,body.dark select,body.dark input[type=date]{background:#252b42;color:white;border-color:#454e6b}
+body.dark .task-details{color:#b5bdd3}
+
+@media(max-width:700px){
+  body{padding:12px 7px}.container{padding:20px 14px}
+  h1{font-size:23px}.input-area,.dashboard{grid-template-columns:1fr}
+  #addBtn{grid-column:span 1}.task-card{flex-direction:column;align-items:stretch}
+  .task-buttons{justify-content:flex-end}.quote{display:none}
+}
+</style>
+</head>
+
+<body>
+
+<div class="quote q1">Keep Going.<br>Keep Growing. 💙</div>
+<div class="quote q2">Don't Stop<br>Until You're<br>Proud. ✨</div>
+<div class="quote q3">Focus.<br>Believe.<br>Achieve. 🎯</div>
+<div class="quote q4">Small Steps<br>Every Day.<br>Big Results. 🌟</div>
+
+<div class="container">
+
+<div class="header">
+  <h1>🎓 Student Task Manager</h1>
+  <button id="darkModeBtn" onclick="toggleDarkMode()">🌙</button>
+</div>
+
+<p class="subtitle">Learn. Focus. Achieve. ✨</p>
+
+<div class="welcome">
+  <h2 id="welcomeMessage">Welcome! 👋</h2>
+  <p>Believe in yourself. Every small step takes you closer to your dream. ✨</p>
+  <br>
+  <p>Let's make today productive! 💪</p>
+</div>
+
+<input id="searchInput" type="text" placeholder="🔍 Search your tasks..." oninput="displayTasks()">
+
+<div class="input-area">
+  <input id="taskInput" type="text" placeholder="📝 What do you want to accomplish?">
+
+  <select id="subjectInput">
+    <option value="General">📚 General</option>
+    <option value="Python">🐍 Python</option>
+    <option value="Maths">📐 Maths</option>
+    <option value="English">📖 English</option>
+    <option value="Physics">⚡ Physics</option>
+    <option value="Project">💻 Project</option>
+  </select>
+
+  <select id="priorityInput">
+    <option value="Low">🟢 Low Priority</option>
+    <option value="Medium">🟡 Medium Priority</option>
+    <option value="High">🔴 High Priority</option>
+  </select>
+
+  <input type="date" id="dueDateInput">
+
+  <button id="addBtn" onclick="addTask()">➕ Add Task</button>
+</div>
+
+<div class="dashboard">
+
+  <div class="dashboard-card">
+    <h3>📊 Today's Progress</h3>
+    <div class="big-number" id="progressText">0%</div>
+    <div class="progress-container"><div id="progressBar"></div></div>
+    <p id="taskProgressText">0 of 0 tasks completed</p>
+  </div>
+
+  <div class="dashboard-card">
+    <h3>🔥 Study Streak</h3>
+    <div class="big-number"><span id="streakCount">0</span> Days</div>
+    <p>Keep learning every day! 🌟</p>
+  </div>
+
+</div>
+
+<div id="dueAlert" class="alert">🔔 You have tasks that need your attention!</div>
+
+<div class="filters">
+  <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+  <button class="filter-btn" onclick="setFilter('active',this)">Active</button>
+  <button class="filter-btn" onclick="setFilter('completed',this)">Completed</button>
+  <button class="filter-btn" onclick="setFilter('high',this)">🔴 High Priority</button>
+</div>
+
+<p id="taskCounter">0 tasks remaining</p>
+
+<ul id="taskList"></ul>
+
+<div id="celebration">
+  <h2>🎉 Amazing Work! 🎉</h2><br>
+  <p>You completed all your tasks!</p>
+  <p>Keep up the great work! 💪🌟</p>
+</div>
+
+<div class="timer">
+  <h2>⏱️ Focus Timer</h2>
+  <p>Stay focused. You can do it! 🎯</p>
+  <div id="timerDisplay">25:00</div>
+  <button class="start" onclick="startTimer()">▶ Start</button>
+  <button class="pause" onclick="pauseTimer()">⏸ Pause</button>
+  <button class="reset" onclick="resetTimer()">🔄 Reset</button>
+</div>
+
+</div>
+
+<script>
+let tasks = JSON.parse(localStorage.getItem("studentTasks")) || [];
+let currentFilter = "all";
+let timerSeconds = 1500;
+let timerInterval = null;
+
+function setWelcomeMessage(){
+  const hour = new Date().getHours();
+  let message = hour < 12 ? "☀️ Good Morning, Student!" :
+                hour < 17 ? "🌤️ Good Afternoon, Student!" :
+                "🌙 Good Evening, Student!";
+  document.getElementById("welcomeMessage").textContent = message;
+}
+
+function saveTasks(){
+  localStorage.setItem("studentTasks", JSON.stringify(tasks));
+}
+
+function addTask(){
+  const input = document.getElementById("taskInput");
+  const text = input.value.trim();
+
+  if(!text){
+    alert("Please enter a task!");
+    return;
+  }
+
+  tasks.push({
+    id: Date.now(),
+    text,
+    subject: document.getElementById("subjectInput").value,
+    priority: document.getElementById("priorityInput").value,
+    dueDate: document.getElementById("dueDateInput").value,
+    completed:false
+  });
+
+  saveTasks();
+  input.value = "";
+  document.getElementById("dueDateInput").value = "";
+  displayTasks();
+}
+
+function displayTasks(){
+  const list = document.getElementById("taskList");
+  const search = document.getElementById("searchInput").value.toLowerCase();
+  list.innerHTML = "";
+
+  const filtered = tasks.filter(task => {
+    const matchSearch = task.text.toLowerCase().includes(search);
+    if(currentFilter === "active") return !task.completed && matchSearch;
+    if(currentFilter === "completed") return task.completed && matchSearch;
+    if(currentFilter === "high") return task.priority === "High" && matchSearch;
+    return matchSearch;
+  });
+
+  if(filtered.length === 0){
+    list.innerHTML = "<li style='text-align:center;padding:25px;color:#777'>No tasks found. Add your first task! 🌟</li>";
+  }
+
+  filtered.forEach(task => {
+    const li = document.createElement("li");
+    li.className = "task-card" + (task.completed ? " completed" : "");
+
+    let dueText = "No deadline";
+    let overdue = false;
+
+    if(task.dueDate){
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const due = new Date(task.dueDate + "T00:00:00");
+
+      if(due < today && !task.completed){
+        overdue = true;
+        dueText = "⚠️ Overdue";
+      } else {
+        dueText = "📅 Due: " + due.toLocaleDateString();
+      }
+    }
+
+    li.innerHTML = `
+      <div class="task-info">
+        <div class="task-title">${escapeHTML(task.text)}</div>
+        <div class="task-details">
+          <span class="priority ${task.priority.toLowerCase()}">${task.priority}</span>
+          📚 ${task.subject} &nbsp;|&nbsp;
+          <span class="${overdue ? "overdue" : ""}">${dueText}</span>
+        </div>
+      </div>
+      <div class="task-buttons">
+        <button class="complete-btn" onclick="toggleTask(${task.id})">
+          ${task.completed ? "↩ Undo" : "✓ Done"}
+        </button>
+        <button class="delete-btn" onclick="deleteTask(${task.id})">🗑 Delete</button>
+      </div>
+    `;
+
+    list.appendChild(li);
+  });
+
+  updateDashboard();
+}
+
+function escapeHTML(text){
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function toggleTask(id){
+  tasks = tasks.map(task => {
+    if(task.id === id){
+      const completed = !task.completed;
+      if(completed) recordStudyDay();
+      return {...task, completed};
+    }
+    return task;
+  });
+  saveTasks();
+  displayTasks();
+}
+
+function deleteTask(id){
+  if(confirm("Delete this task?")){
+    tasks = tasks.filter(task => task.id !== id);
+    saveTasks();
+    displayTasks();
+  }
+}
+
+function setFilter(filter, button){
+  currentFilter = filter;
+  document.querySelectorAll(".filter-btn").forEach(btn => btn.classList.remove("active"));
+  button.classList.add("active");
+  displayTasks();
+}
+
+function updateDashboard(){
+  const total = tasks.length;
+  const completed = tasks.filter(task => task.completed).length;
+  const remaining = total - completed;
+  const percentage = total ? Math.round(completed / total * 100) : 0;
+
+  document.getElementById("progressBar").style.width = percentage + "%";
+  document.getElementById("progressText").textContent = percentage + "%";
+  document.getElementById("taskProgressText").textContent = `${completed} of ${total} tasks completed`;
+  document.getElementById("taskCounter").textContent =
+    remaining + (remaining === 1 ? " task remaining" : " tasks remaining");
+
+  document.getElementById("celebration").style.display =
+    total > 0 && completed === total ? "block" : "none";
+
+  updateDueAlert();
+  updateStreak();
+}
+
+function updateDueAlert(){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const urgent = tasks.filter(task => {
+    if(task.completed || !task.dueDate) return false;
+    const due = new Date(task.dueDate + "T00:00:00");
+    due.setHours(0,0,0,0);
+    return due <= today;
+  });
+
+  const alertBox = document.getElementById("dueAlert");
+
+  if(urgent.length){
+    alertBox.style.display = "block";
+    alertBox.textContent = `🔔 ${urgent.length} task(s) need your attention today!`;
+  }else{
+    alertBox.style.display = "none";
+  }
+}
+
+function recordStudyDay(){
+  const today = new Date().toISOString().split("T")[0];
+  let studyDays = JSON.parse(localStorage.getItem("studyDays")) || [];
+
+  if(!studyDays.includes(today)){
+    studyDays.push(today);
+    localStorage.setItem("studyDays", JSON.stringify(studyDays));
+  }
+}
+
+function updateStreak(){
+  let studyDays = JSON.parse(localStorage.getItem("studyDays")) || [];
+  let streak = 0;
+  let current = new Date();
+  current.setHours(0,0,0,0);
+
+  while(true){
+    const date = current.toISOString().split("T")[0];
+    if(studyDays.includes(date)){
+      streak++;
+      current.setDate(current.getDate() - 1);
+    }else{
+      break;
+    }
+  }
+
+  document.getElementById("streakCount").textContent = streak;
+}
+
+function updateTimer(){
+  const minutes = Math.floor(timerSeconds / 60);
+  const seconds = timerSeconds % 60;
+  document.getElementById("timerDisplay").textContent =
+    String(minutes).padStart(2,"0") + ":" + String(seconds).padStart(2,"0");
+}
+
+function startTimer(){
+  if(timerInterval !== null) return;
+
+  timerInterval = setInterval(() => {
+    if(timerSeconds > 0){
+      timerSeconds--;
+      updateTimer();
+    }else{
+      clearInterval(timerInterval);
+      timerInterval = null;
+      alert("🎉 Focus session complete! Take a short break.");
+    }
+  },1000);
+}
+
+function pauseTimer(){
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+function resetTimer(){
+  pauseTimer();
+  timerSeconds = 1500;
+  updateTimer();
+}
+
+function toggleDarkMode(){
+  document.body.classList.toggle("dark");
+  const dark = document.body.classList.contains("dark");
+  localStorage.setItem("darkMode", dark);
+  document.getElementById("darkModeBtn").textContent = dark ? "☀️" : "🌙";
+}
+
+if(localStorage.getItem("darkMode") === "true"){
+  document.body.classList.add("dark");
+  document.getElementById("darkModeBtn").textContent = "☀️";
+}
+
+setWelcomeMessage();
+updateTimer();
+displayTasks();
+</script>
+
+</body>
+</html>
